@@ -2,6 +2,10 @@
 
 Website pribadi/portofolio dengan efek scroll-scrubbed video, parallax 3D, dan tema Zenitsu (Demon Slayer). Tanpa nuansa Jepang — fokus pada aksen kuning emas, oranye petir, pola segitiga (uroko), dan garis zig-zag petir.
 
+## Akses Online
+
+Live Website: [https://dev-vislian.github.io/myport/](https://dev-vislian.github.io/myport/)
+
 ## Cara Menjalankan
 
 ```bash
