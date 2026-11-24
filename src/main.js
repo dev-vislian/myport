@@ -48,7 +48,8 @@ function initStage() {
 
   const tl = site.timeline
   const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const isSmall = window.matchMedia('(max-width: 768px)').matches
+  // izinkan video di mobile/hp
+  const isSmall = false
 
   // poster fallback
   const poster = $('.fallback-poster')
