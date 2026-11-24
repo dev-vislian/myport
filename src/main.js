@@ -448,11 +448,8 @@ function render() {
   app.innerHTML = `
     <!-- Navbar -->
     <nav class="navbar">
-      <div class="container nav-inner">
-        <a href="#beranda" class="brand">
-          <span class="brand-mark"></span>
-          ${site.hero.name === '[ISI DI SINI]' ? 'PORTFOLIO' : site.hero.name.toUpperCase()}
-        </a>
+      <div class="nav-inner">
+        <a href="#beranda" class="brand-mark" aria-label="Beranda"></a>
         <ul class="nav-links">
           ${site.nav.map(n => `<li><a href="${n.href}">${n.label}</a></li>`).join('')}
         </ul>
