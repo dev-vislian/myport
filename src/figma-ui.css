@@ -1,0 +1,33 @@
+/* ========== FIGMA-STYLE UI CHIPS ========== */
+.stage-badges {
+  position: absolute; inset: 0; z-index: 35;
+  pointer-events: none;
+  transform-style: preserve-3d;
+}
+.chip {
+  position: absolute;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(19, 26, 46, 0.7);
+  border: 1px solid rgba(245, 200, 66, 0.35);
+  backdrop-filter: blur(10px);
+  color: var(--fg);
+  font-family: var(--font-text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
+}
+.chip::before {
+  content: '';
+  position: absolute;
+  left: 10px; top: 50%; transform: translateY(-50%);
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+.chip { padding-left: 26px; }
