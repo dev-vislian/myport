@@ -48,11 +48,7 @@ export const site = {
 
   // Label melayang ala frame Figma di atas video. Posisi dalam persen (0-100).
   // depth: kecepatan parallax, z: kedalaman translateZ (px).
-  stageBadges: [
-    { label: 'Mode Petir', x: 12, y: 28, depth: 0.6, z: 90 },
-    { label: 'Jatuh Bebas', x: 84, y: 62, depth: 0.9, z: 140 },
-    { label: 'Infinity Castle', x: 74, y: 18, depth: 0.4, z: 60 },
-  ],
+  stageBadges: [],
 
   projects: [
     {
