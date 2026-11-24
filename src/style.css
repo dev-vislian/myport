@@ -440,14 +440,39 @@ footer {
   .stage-pin { position: relative; height: auto; }
   .video-stack video { display: none; }
   .fallback-poster { display: block !important; }
+  .parallax { pointer-events: none !important; }
+  .stage-badges { display: none !important; }
 }
 @media (max-width: 768px) {
   .stage-wrap { height: auto !important; }
-  .stage-pin { position: relative; height: auto; min-height: 100vh; }
-  .video-stack video { display: none; }
+  .stage-pin { 
+    position: relative; 
+    height: 100svh; 
+    min-height: 560px;
+    overflow: hidden;
+  }
+  .video-stack video { display: none !important; }
   .fallback-poster { display: block !important; }
-  .parallax .layer-near { display: none; }
-  .card-grid { grid-template-columns: 1fr !important; }
+  .parallax, .stage-badges, .lightning-flash { display: none !important; }
+  .project-title-overlay, .stage-cards { display: none !important; }
+  .hero-text { opacity: 1 !important; }
+  .hero-name { font-size: clamp(44px, 14vw, 88px); }
+  .hero-tag { font-size: clamp(14px, 4vw, 20px); padding: 0 8px; }
+
+  .section { padding: 72px 0 !important; }
+  .section-header { margin-bottom: 40px; }
+  .section-title { font-size: clamp(36px, 10vw, 56px) !important; }
+  .section-lead { font-size: 16px !important; }
+
+  .card-grid { grid-template-columns: 1fr !important; grid-auto-rows: auto !important; gap: 20px !important; }
+  .card { padding: 24px !important; }
+  .card-img { aspect-ratio: 16/10; }
+  .card-title { font-size: 20px; }
+  .card-desc { font-size: 14px; min-height: 0; }
+
+  .about-grid, .contact-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+  .about-text, .contact-text { font-size: 16px; }
+  .contact-link { padding: 16px 18px; }
 }
 
 .fallback-poster {
