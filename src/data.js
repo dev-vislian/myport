@@ -27,7 +27,10 @@ export const site = {
   // Video 1 = video-1.mp4 (membuka pintu), Video 2 = video-2.mp4 (Zenitsu terjun).
   // Skenario utama: video re-encode keyframe rapat di public/video/scrub/.
   // Asli di public/video/ tetap utuh (tidak disentuh), fallback bisa dipakai jika scrub gagal.
-  videos: ['/video/scrub/video-1.mp4', '/video/scrub/video-2.mp4'],
+  videos: [
+    import.meta.env.BASE_URL + 'video/scrub/video-1.mp4',
+    import.meta.env.BASE_URL + 'video/scrub/video-2.mp4',
+  ],
   // Fallback urutan asli: ['/video/video-1.mp4', '/video/video-2.mp4'],
 
   // Progress (0..1) untuk tiap momen overlay di atas video.
