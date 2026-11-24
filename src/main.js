@@ -113,6 +113,9 @@ function initStage() {
   v1.addEventListener('loadedmetadata', refreshDur)
   v2.addEventListener('loadedmetadata', refreshDur)
 
+  v1.addEventListener('ended', () => { v1.style.opacity = 0 })
+  v2.addEventListener('ended', () => { v2.style.transition = 'opacity .4s ease-out'; v2.style.opacity = 0 })
+
   function updateProgress() {
     const rect = wrap.getBoundingClientRect()
     const totalScroll = Math.max(1, wrap.offsetHeight - window.innerHeight)
@@ -190,17 +193,8 @@ function initStage() {
     const heroOpacity = p < tl.heroFadeStart ? 1 : (p < tl.heroFadeEnd ? 1 - (p - tl.heroFadeStart) / (tl.heroFadeEnd - tl.heroFadeStart) : 0)
     if (hero) hero.style.opacity = heroOpacity
 
-    const pTitleOpacity = p < tl.projectTitleStart ? 0 : (p < tl.projectTitleEnd ? (p - tl.projectTitleStart) / (tl.projectTitleEnd - tl.projectTitleStart) : 1)
+    const pTitleOpacity = p < tl.projectTitleStart ? 0 : (p < tl.projectTitleEnd ? (p - tl.projectTitleStart) / (tl.projectTitleEnd - tl.projectTitleStart) : (p < 0.92 ? 1 : Math.max(0, 1 - (p - 0.92) / 0.05)))
     if (pTitle) pTitle.style.opacity = pTitleOpacity
-
-    const cardsOpacity = p < tl.cardsStart ? 0 : (p < tl.cardsEnd ? (p - tl.cardsStart) / (tl.cardsEnd - tl.cardsStart) : 1)
-    if (cards) {
-      cards.style.opacity = cardsOpacity
-      cards.style.pointerEvents = cardsOpacity > 0.5 ? 'auto' : 'none'
-      const cp = clamp((p - tl.cardsStart) / (tl.cardsEnd - tl.cardsStart))
-      const inv = 1 - cp
-      cards.style.transform = `translate3d(0, ${inv * 70}px, ${inv * -180}px) rotateX(${inv * 14}deg)`
-    }
   }
 
   /* ---------- parallax ---------- */
@@ -232,7 +226,7 @@ function initStage() {
 
   function scatterShapes(container, count) {
     if (!container) return
-    const shapes = ['door', 'stair', 'beam', 'shard']
+    const shapes = ['stair', 'beam', 'shard']
     for (let i = 0; i < count; i++) {
       const s = document.createElement('div')
       s.className = 'shape ' + shapes[i % shapes.length]
@@ -292,21 +286,10 @@ function initStage() {
       }
     })
 
-    // mid layer - slower, slight z
+    // mid layer - hidden
     if (midLayer) {
       midLayer.style.transform = `translate3d(0, ${-p * 350}px, ${p * 80}px)`
     }
-    midItems.forEach(el => {
-      const sp = parseFloat(el.dataset.speed) || 1
-      const dir = parseFloat(el.dataset.dir) || 1
-      const baseRot = parseFloat(el.dataset.baseRotate) || 0
-      const baseZ = parseFloat(el.dataset.baseZ) || 0
-      const rot = baseRot + p * sp * 140
-      const z = baseZ + p * 80
-      const x = dir * p * sp * 100
-      const y = -p * sp * 350
-      el.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotate(${rot}deg)`
-    })
 
     // far layer - slow
     if (farLayer) {
@@ -368,7 +351,7 @@ function cardHTML(p) {
     ? `<img src="${p.image}" alt="${p.title}" />`
     : `<span>${p.title}</span>`
   return `
-    <article class="card tilt" data-tilt>
+    <article class="card">
       <div class="card-img">${img}</div>
       <h3 class="card-title">${p.title}</h3>
       <p class="card-desc">${p.description}</p>
@@ -377,61 +360,48 @@ function cardHTML(p) {
     </article>`
 }
 
-const tiltTargets = new Map()
-let tiltRaf = 0
-let tiltLastTs = performance.now()
-
-function initTilt() {
-  const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const isMobile = window.matchMedia('(max-width: 768px)').matches
-  const els = $$('.tilt')
-  if (isReduced || isMobile || els.length === 0) return
-
-  function tick() {
-    const now = performance.now()
-    const dt = Math.min(0.05, Math.max(0.001, (now - tiltLastTs) / 1000))
-    tiltLastTs = now
-    let any = false
-    tiltTargets.forEach((t, el) => {
-      const curX = parseFloat(el.dataset.tiltCurX) || 0
-      const curY = parseFloat(el.dataset.tiltCurY) || 0
-      const nx = damp(curX, t.x, 10, dt)
-      const ny = damp(curY, t.y, 10, dt)
-      el.dataset.tiltCurX = nx.toFixed(3)
-      el.dataset.tiltCurY = ny.toFixed(3)
-      const settled = Math.abs(nx - curX) < 0.005 && Math.abs(ny - curY) < 0.005
-      if (settled && Math.abs(t.x) < 0.005 && Math.abs(t.y) < 0.005) {
-        el.style.transform = ''
-        tiltTargets.delete(el)
-        el.classList.remove('is-tilting')
-      } else {
-        any = true
-        el.style.transform = `perspective(900px) rotateX(${ny}deg) rotateY(${nx}deg) translate3d(6px, -6px, 0)`
+function initScrollReveal() {
+  const els = $$('.animate-in')
+  if (els.length === 0) return
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible')
+        obs.unobserve(entry.target)
       }
     })
-    if (!any) { tiltRaf = 0; return }
-    tiltRaf = requestAnimationFrame(tick)
-  }
+  }, { threshold: 0.1 })
+  els.forEach(el => obs.observe(el))
+}
 
-  els.forEach(el => {
-    el.addEventListener('mousemove', e => {
-      const r = el.getBoundingClientRect()
-      const cx = r.left + r.width / 2
-      const cy = r.top + r.height / 2
-      const dx = clamp((e.clientX - cx) / (r.width / 2), -1, 1)
-      const dy = clamp((e.clientY - cy) / (r.height / 2), -1, 1)
-      el.style.setProperty('--mouse-x', `${((e.clientX - r.left) / r.width * 100)}%`)
-      el.style.setProperty('--mouse-y', `${((e.clientY - r.top) / r.height * 100)}%`)
-      tiltTargets.set(el, { x: dx * 7, y: -dy * 7 })
-      el.classList.add('is-tilting')
-      if (!tiltRaf) { tiltLastTs = performance.now(); tiltRaf = requestAnimationFrame(tick) }
+function initProjectsDeck() {
+  const deck = $('#projects-deck')
+  const dots = $('#projects-dots')
+  if (!deck || !dots) return
+
+  const cards = $$('.card', deck)
+  cards.forEach((_, i) => {
+    const b = document.createElement('button')
+    b.className = 'project-dot' + (i === 0 ? ' active' : '')
+    b.setAttribute('aria-label', `Project ${i + 1}`)
+    b.addEventListener('click', () => {
+      cards[i].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
     })
-    el.addEventListener('mouseleave', () => {
-      tiltTargets.set(el, { x: 0, y: 0 })
-      el.classList.add('is-tilting')
-      if (!tiltRaf) { tiltLastTs = performance.now(); tiltRaf = requestAnimationFrame(tick) }
-    })
+    dots.appendChild(b)
   })
+
+  const sync = () => {
+    const mid = deck.scrollLeft + deck.clientWidth / 2
+    let active = 0
+    let best = Infinity
+    cards.forEach((c, i) => {
+      const center = c.offsetLeft + c.offsetWidth / 2
+      const d = Math.abs(center - mid)
+      if (d < best) { best = d; active = i }
+    })
+    $$('.project-dot', dots).forEach((d, i) => d.classList.toggle('active', i === active))
+  }
+  deck.addEventListener('scroll', sync, { passive: true })
 }
 
 /* =========================================================
@@ -497,28 +467,22 @@ function render() {
           <p>${site.hero.projectLead}</p>
         </div>
 
-        <div class="stage-cards">
-          <div class="card-grid">
-            ${site.projects.map(cardHTML).join('')}
-          </div>
-        </div>
-
         <div class="lightning-flash" aria-hidden="true"></div>
       </div>
     </section>
 
     <!-- Project section -->
     <section id="project" class="section">
-      <div class="uriko-border"></div>
       <div class="container">
         <div class="section-header">
           <p class="eyebrow">Pilihan terbaik</p>
-          <h2 class="section-title">Project</h2>
+          <h2 class="section-title animate-in">Project</h2>
           <p class="section-lead">${site.hero.projectLead}</p>
         </div>
-        <div class="card-grid">
+        <div class="projects-deck" id="projects-deck">
           ${site.projects.map(cardHTML).join('')}
         </div>
+        <div class="projects-dots" id="projects-dots"></div>
       </div>
     </section>
 
@@ -546,7 +510,6 @@ function render() {
 
     <!-- Kontak -->
     <section id="kontak" class="section">
-      <div class="uriko-border"></div>
       <div class="container">
         <div class="contact-grid">
           <div>
@@ -584,4 +547,5 @@ render()
 initTheme()
 initNav()
 initStage()
-initTilt()
+initScrollReveal()
+initProjectsDeck()

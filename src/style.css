@@ -214,17 +214,10 @@ html:not([data-theme="dark"]) .navbar {
   will-change: transform, opacity;
 }
 .layer-near { z-index: 30; filter: blur(calc(0.3px + var(--energy, 0) * 1.2px)); }
-.layer-mid  { z-index: 20; }
-.layer-far  { z-index: 15; background: linear-gradient(180deg, rgba(245,200,66,.08), transparent); }
+.layer-mid  { z-index: 20; display: none; }
+.layer-far  { z-index: 15; }
 
-.fog {
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 30% 40%, rgba(245,200,66,.12), transparent 65%);
-  opacity: 0.3;
-  pointer-events: none;
-  z-index: 12;
-  filter: blur(3px);
-}
+.fog { display: none; }
 
 /* debris / dust / speed lines (near) */
 .debris { position: absolute; border-radius: 50%; background: var(--accent); opacity: 0.5; }
@@ -242,10 +235,6 @@ html:not([data-theme="dark"]) .navbar {
   border: 1px solid rgba(245,200,66,.55);
   background: rgba(245,200,66,.06);
   transform-style: preserve-3d;
-}
-.shape.door {
-  width: 120px; height: 200px; border-radius: 6px 6px 0 0;
-  background: linear-gradient(180deg, rgba(245,200,66,.15), rgba(255,138,61,.08));
 }
 .shape.stair {
   width: 160px; height: 40px; transform: skewX(-20deg);
@@ -302,14 +291,14 @@ html:not([data-theme="dark"]) .navbar {
   text-align: center; padding: 24px;
   pointer-events: none;
   opacity: 0;
+  transition: opacity 0.3s ease;
 }
 .project-title-overlay h2 {
   font-size: clamp(64px, 14vw, 200px);
   color: var(--accent);
-  text-shadow: 0 0 80px rgba(245,200,66,.5), 4px 4px 0 var(--accent-2);
-  transform: translateZ(60px) rotate(-3deg);
+  text-shadow: 0 0 40px rgba(0,0,0,0.8);
 }
-.project-title-overlay p { color: var(--fg-soft); font-size: 18px; margin-top: 8px; }
+.project-title-overlay p { color: var(--fg); font-size: 18px; margin-top: 8px; font-weight: 500; }
 
 /* cards at end of stage */
 .stage-cards {
@@ -350,6 +339,39 @@ html:not([data-theme="dark"]) .navbar {
   .card-grid { grid-template-columns: repeat(2, 1fr); } 
 }
 @media (max-width: 600px) { .card-grid { grid-template-columns: 1fr; grid-auto-rows: auto; } }
+
+.projects-deck {
+  display: flex;
+  gap: 32px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding-bottom: 24px;
+  scrollbar-width: none;
+}
+.projects-deck::-webkit-scrollbar { display: none; }
+.projects-deck .card {
+  min-width: min(420px, 85vw);
+  scroll-snap-align: center;
+  flex-shrink: 0;
+}
+.projects-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+.project-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--line);
+  transition: all .2s;
+}
+.project-dot.active {
+  width: 32px;
+  border-radius: 999px;
+  background: var(--accent);
+}
 
 .card {
   position: relative;
@@ -416,9 +438,17 @@ html:not([data-theme="dark"]) .navbar {
 .section { padding: 100px 0; position: relative; }
 .section-header { margin-bottom: 48px; }
 .section-title { font-size: clamp(40px, 7vw, 88px); margin-bottom: 12px; }
+.section-title.animate-in {
+  opacity: 0; transform: translateY(24px); transition: all .6s cubic-bezier(.16,1,.3,1);
+}
+.section-title.animate-in.visible { opacity: 1; transform: translateY(0); }
 .section-lead { color: var(--fg-soft); font-size: clamp(16px, 2vw, 20px); max-width: 640px; }
 
-#project { background: var(--bg-2); }
+#project {
+  background: linear-gradient(180deg, rgba(10,14,26,0.95), rgba(10,14,26,0.85)), url('video/scrub/video-1.mp4') center/cover fixed;
+  position: relative;
+}
+#project .container { position: relative; z-index: 2; }
 #tentang { background: var(--bg); }
 #kontak { background: var(--bg-2); }
 
