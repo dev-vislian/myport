@@ -44,6 +44,14 @@ export const site = {
     lightningAt: [0.18, 0.55, 0.82],
   },
 
+  // Progress (0..1) kapan tiap section aktif di depth meter.
+  // p > tentangEnd -> Tentang aktif; p > projectEnd -> Project aktif; p > kontakEnd -> Kontak aktif.
+  navBreakpoints: {
+    tentangEnd: 0.25,
+    projectEnd: 0.65,
+    kontakEnd: 0.85,
+  },
+
   stageScrollVh: 900,
 
   // Label melayang ala frame Figma di atas video. Posisi dalam persen (0-100).

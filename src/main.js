@@ -19,7 +19,9 @@ function initTheme() {
   if (stored) {
     document.documentElement.dataset.theme = stored
   }
-  $('.theme-toggle')?.addEventListener('click', () => {
+  const btn = $('.theme-toggle')
+  if (!btn) return
+  btn.addEventListener('click', () => {
     const cur = document.documentElement.dataset.theme
     const next = cur === 'light' ? 'dark' : 'light'
     document.documentElement.dataset.theme = next
@@ -28,13 +30,56 @@ function initTheme() {
 }
 
 /* =========================================================
-   Navbar / mobile menu
+   Depth Meter & ScrollSpy
    ========================================================= */
-function initNav() {
-  const burger = $('.hamburger')
-  const links = $('.nav-links')
-  burger?.addEventListener('click', () => links?.classList.toggle('open'))
-  $$('.nav-links a').forEach(a => a.addEventListener('click', () => links?.classList.remove('open')))
+function initDepthMeter() {
+  const sections = $$('section[id]')
+  const dots = $$('.meter-dot')
+  const progressFill = $('.meter-progress-fill')
+  if (!sections.length || !dots.length) return
+
+  const byId = new Map(sections.map(s => [s.id, s]))
+
+  const setActive = (id) => {
+    dots.forEach(dot => {
+      const active = dot.getAttribute('href') === `#${id}`
+      dot.classList.toggle('active', active)
+      dot.setAttribute('aria-current', active ? 'true' : 'false')
+    })
+  }
+
+  const goTo = (id) => {
+    const target = byId.get(id)
+    if (!target) return
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    history.replaceState(null, '', `#${id}`)
+  }
+
+  dots.forEach(dot => {
+    dot.addEventListener('click', (e) => {
+      e.preventDefault()
+      goTo(dot.getAttribute('href')?.slice(1))
+    })
+  })
+
+  const updateFill = () => {
+    if (!progressFill) return
+    const total = Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
+    progressFill.style.height = `${clamp(window.scrollY / total) * 100}%`
+  }
+
+  window.addEventListener('scroll', () => {
+    updateFill()
+    const total = Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
+    const p = window.scrollY / total
+    if (p > site.navBreakpoints.kontakEnd) setActive('kontak')
+    else if (p > site.navBreakpoints.projectEnd) setActive('project')
+    else if (p > site.navBreakpoints.tentangEnd) setActive('tentang')
+    else setActive('beranda')
+  }, { passive: true })
+
+  window.addEventListener('resize', updateFill)
+  updateFill()
 }
 
 /* =========================================================
@@ -43,7 +88,8 @@ function initNav() {
 function initStage() {
   const wrap = $('.stage-wrap')
   const pin = $('.stage-pin')
-  const vids = $$('.video-stack video')
+  const bg = $('.video-bg')
+  const vids = $$('.video-bg video')
   if (!wrap || vids.length === 0) return
 
   const tl = site.timeline
@@ -197,7 +243,7 @@ function initStage() {
     if (pTitle) pTitle.style.opacity = pTitleOpacity
   }
 
-  /* ---------- parallax ---------- */
+  /* ---------- parallax (non-auros variables initially hidden) ---------- */
   function scatterDebris(container, count) {
     if (!container) return
     for (let i = 0; i < count; i++) {
@@ -211,6 +257,7 @@ function initStage() {
       d.style.opacity = 0.4
       d.dataset.speed = (Math.random() * 1.5 + 0.5).toFixed(3)
       d.dataset.baseOpacity = (Math.random() * 0.35 + 0.25).toFixed(3)
+      d.style.setProperty('--energy', '0') // added for visual consistency
       container.appendChild(d)
     }
     for (let i = 0; i < 8; i++) {
@@ -320,10 +367,12 @@ function initStage() {
     raf = requestAnimationFrame(frame)
   }
 
+  raf = requestAnimationFrame(frame)
+  // progress & nav handled by initDepthMeter; video scrub mengikuti scroll penuh halaman
   function onScroll() {
-    const p = updateProgress()
+    const total = Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
+    const p = clamp(window.scrollY / total)
     const delta = Math.abs(p - targetP)
-    // Guard micro-pixel scroll to avoid jitter & redundant rAF updates.
     if (delta > 0.001) {
       targetP = p
       rawEnergy = Math.min(1, rawEnergy + delta * 8)
@@ -334,11 +383,8 @@ function initStage() {
       raf = requestAnimationFrame(frame)
     }
   }
-
-  raf = requestAnimationFrame(frame)
   window.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('resize', onScroll)
-  // prime
   onScroll()
 }
 
@@ -416,33 +462,33 @@ function render() {
   if (desc) desc.setAttribute('content', meta.description)
 
   app.innerHTML = `
-    <!-- Navbar -->
-    <nav class="navbar">
-      <div class="nav-inner">
-        <a href="#beranda" class="brand-mark" aria-label="Beranda"></a>
-        <ul class="nav-links">
-          ${site.nav.map(n => `<li><a href="${n.href}">${n.label}</a></li>`).join('')}
-        </ul>
-        <div class="nav-actions">
-          <button class="theme-toggle" aria-label="Toggle theme">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="4"/>
-              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-            </svg>
-          </button>
-          <button class="hamburger" aria-label="Menu">
-            <span></span><span></span><span></span>
-          </button>
-        </div>
+    <!-- Depth Meter -->
+    <nav class="depth-meter" aria-label="Navigasi Utama">
+      <div class="meter-controls">
+        <button class="theme-toggle" aria-label="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+          </svg>
+        </button>
+      </div>
+      <div class="meter-track">
+        <div class="meter-progress-fill"></div>
+        <a href="#beranda" class="meter-dot active" aria-label="Beranda" aria-current="true"><span>Beranda</span></a>
+        <a href="#tentang" class="meter-dot" aria-label="Tentang"><span>Tentang</span></a>
+        <a href="#project" class="meter-dot" aria-label="Project"><span>Project</span></a>
+        <a href="#kontak" class="meter-dot" aria-label="Kontak"><span>Kontak</span></a>
       </div>
     </nav>
+
+    <!-- Video Background (full page) -->
+    <div class="video-bg" aria-hidden="true">
+      ${site.videos.map((src, i) => `<video src="${src}" muted playsinline preload="auto" class="${i===0?'v1':'v2'}"></video>`).join('')}
+    </div>
 
     <!-- Stage -->
     <section id="beranda" class="stage-wrap">
       <div class="stage-pin">
-        <div class="video-stack">
-          ${site.videos.map((src, i) => `<video src="${src}" muted playsinline preload="auto" class="${i===0?'v1':'v2'}"></video>`).join('')}
-        </div>
         <div class="fallback-poster"></div>
 
         <div class="parallax" aria-hidden="true">
@@ -471,21 +517,6 @@ function render() {
       </div>
     </section>
 
-    <!-- Project section -->
-    <section id="project" class="section">
-      <div class="container">
-        <div class="section-header">
-          <p class="eyebrow">Pilihan terbaik</p>
-          <h2 class="section-title animate-in">Project</h2>
-          <p class="section-lead">${site.hero.projectLead}</p>
-        </div>
-        <div class="projects-deck" id="projects-deck">
-          ${site.projects.map(cardHTML).join('')}
-        </div>
-        <div class="projects-dots" id="projects-dots"></div>
-      </div>
-    </section>
-
     <!-- Tentang -->
     <section id="tentang" class="section">
       <div class="zigzag" aria-hidden="true">
@@ -505,6 +536,21 @@ function render() {
             </div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- Project section -->
+    <section id="project" class="section">
+      <div class="container">
+        <div class="section-header">
+          <p class="eyebrow">Pilihan terbaik</p>
+          <h2 class="section-title animate-in">Project</h2>
+          <p class="section-lead">${site.hero.projectLead}</p>
+        </div>
+        <div class="projects-deck" id="projects-deck">
+          ${site.projects.map(cardHTML).join('')}
+        </div>
+        <div class="projects-dots" id="projects-dots"></div>
       </div>
     </section>
 
@@ -545,7 +591,7 @@ function render() {
    ========================================================= */
 render()
 initTheme()
-initNav()
+initDepthMeter()
 initStage()
 initScrollReveal()
 initProjectsDeck()
