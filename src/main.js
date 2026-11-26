@@ -36,50 +36,86 @@ function initDepthMeter() {
   const sections = $$('section[id]')
   const dots = $$('.meter-dot')
   const progressFill = $('.meter-progress-fill')
-  if (!sections.length || !dots.length) return
+  const track = $('.meter-track')
+  if (!sections.length || !dots.length || !track) return
 
-  const byId = new Map(sections.map(s => [s.id, s]))
+  const ids = dots.map(d => d.getAttribute('href')?.slice(1))
 
-  const setActive = (id) => {
-    dots.forEach(dot => {
-      const active = dot.getAttribute('href') === `#${id}`
+  const setActive = (idx) => {
+    dots.forEach((dot, i) => {
+      const active = i === idx
       dot.classList.toggle('active', active)
       dot.setAttribute('aria-current', active ? 'true' : 'false')
     })
   }
 
-  const goTo = (id) => {
-    const target = byId.get(id)
-    if (!target) return
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    history.replaceState(null, '', `#${id}`)
+  const getTargets = () => {
+    const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
+    return sections.map((sec, i) => {
+      if (i === 0) return 0
+      const content = $('.container', sec) || sec
+      const rect = content.getBoundingClientRect()
+      const absTop = rect.top + window.scrollY
+      // center content in viewport
+      const target = absTop + content.offsetHeight / 2 - window.innerHeight / 2
+      return clamp(target, 0, maxScroll)
+    })
   }
 
-  dots.forEach(dot => {
+  let targets = getTargets()
+
+  const goTo = (idx) => {
+    window.scrollTo({ top: targets[idx], behavior: 'smooth' })
+    history.replaceState(null, '', `#${ids[idx]}`)
+  }
+
+  dots.forEach((dot, i) => {
     dot.addEventListener('click', (e) => {
       e.preventDefault()
-      goTo(dot.getAttribute('href')?.slice(1))
+      goTo(i)
     })
   })
 
   const updateFill = () => {
     if (!progressFill) return
-    const total = Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
-    progressFill.style.height = `${clamp(window.scrollY / total) * 100}%`
+    const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
+    const y = clamp(window.scrollY, 0, maxScroll)
+
+    // dot centers in track pixels
+    const trackH = track.clientHeight
+    const dotCenters = dots.map(d => {
+      const r = d.getBoundingClientRect()
+      const tr = track.getBoundingClientRect()
+      return r.top - tr.top + r.height / 2
+    })
+
+    // active = last target we've reached
+    let activeIdx = 0
+    for (let i = 0; i < targets.length; i++) {
+      if (y >= targets[i] - 2) activeIdx = i
+    }
+
+    // interpolate fill height to reach dot center at target
+    let fillPx = dotCenters[0]
+    if (activeIdx >= targets.length - 1) {
+      fillPx = dotCenters[dotCenters.length - 1]
+    } else {
+      const a = targets[activeIdx]
+      const b = targets[activeIdx + 1]
+      const t = clamp((y - a) / Math.max(1, b - a), 0, 1)
+      fillPx = lerp(dotCenters[activeIdx], dotCenters[activeIdx + 1], t)
+    }
+
+    progressFill.style.height = `${clamp(fillPx, 0, trackH)}px`
+    setActive(activeIdx)
   }
 
-  window.addEventListener('scroll', () => {
-    updateFill()
-    const total = Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
-    const p = window.scrollY / total
-    if (p > site.navBreakpoints.kontakEnd) setActive('kontak')
-    else if (p > site.navBreakpoints.projectEnd) setActive('project')
-    else if (p > site.navBreakpoints.tentangEnd) setActive('tentang')
-    else setActive('beranda')
-  }, { passive: true })
-
-  window.addEventListener('resize', updateFill)
-  updateFill()
+  const refresh = () => { targets = getTargets(); updateFill() }
+  window.addEventListener('scroll', updateFill, { passive: true })
+  window.addEventListener('resize', refresh)
+  // recalc after layout settles
+  requestAnimationFrame(refresh)
+  setTimeout(refresh, 300)
 }
 
 /* =========================================================
